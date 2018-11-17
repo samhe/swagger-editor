@@ -40,6 +40,53 @@ const plugins = {
   ASTPlugin,
 }
 
+const csAPISepcURL = "http://localhost:3000/apiSpecs"
+const token = "accessToken"
+const getAPISpecList = async () => {
+  const res = await fetch(csAPISepcURL, {
+    headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Token": token
+    }
+  })
+  return await res.json()
+}
+const getAPISpecById = async (id) => {
+  const res = await fetch(csAPISepcURL + "/" + id, {
+    headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Token": token
+    }
+  })
+  return await res.json()
+}
+const uploadAPISpec = async (apiSpec) => {
+  let res
+  if(apiSpec.id) {
+    res = await fetch(csAPISepcURL + "/" + id, {
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Token": token
+      },
+      method: "PUT",
+      body: JSON.stringify(apiSpec)
+    })
+  } else {
+    res = await fetch(csAPISepcURL, {
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Token": token
+      },
+      method: "POST",
+      body: JSON.stringify(apiSpec)
+    })
+  }
+  return await res.json()
+}
 const defaults = {
   dom_id: "#swagger-editor", // eslint-disable-line camelcase, we have this prop for legacy reasons.
   layout: "EditorLayout",
@@ -52,7 +99,12 @@ const defaults = {
   },
   showExtensions: true,
   swagger2GeneratorUrl: "https://generator.swagger.io/api/swagger.json",
-  oas3GeneratorUrl: "https://generator3.swagger.io/api/swagger.json"
+  oas3GeneratorUrl: "https://generator3.swagger.io/api/swagger.json",
+  csAPISpecActions: {
+    getAPISpecList,
+    getAPISpecById,
+    uploadAPISpec
+  }
 }
 
 module.exports = function SwaggerEditor(options) {

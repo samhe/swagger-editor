@@ -33,7 +33,10 @@ export default class Topbar extends React.Component {
       swaggerClient: null,
       clients: [],
       servers: [],
-      definitionVersion: "Unknown"
+      definitionVersion: "Unknown",
+      csAPISpecList: [],
+      csAPISpecToUpload: {},
+      csAPISpecDiffs: {}
     }
   }
 
@@ -94,8 +97,145 @@ export default class Topbar extends React.Component {
     }
     return reactFileDownload(content, fileName)
   }
-
   // Menu actions
+  openCSAPISpecListModal = async () => {
+    await this.getCSAPISpecList()
+    this.showModal("csAPISpecListModal")
+  }
+  openCSAPISpecUploadModal = async (type) => {
+    this.generateAPISpecAndDiffsBeforeUpload()
+    this.setState({csAPISpecUploadModalType: (type === "new" ? "new" : "edit")})
+    await this.getCSAPISpecList()
+    this.showModal("csAPISpecUploadModal")
+  }
+  /**
+   * returns current spec's leading info as array, like: ["[GET]/openapi/a"]
+   */
+  getCurrentAPISpecLeadingInfo = () => {
+    const leadingInfo = []
+    const specSelectors = this.props.specSelectors
+    const baseURL = specSelectors.basePath()
+    const paths = specSelectors.paths().toObject()
+    Object.keys(paths).forEach(path => {
+      const pathObj = paths[path].toObject()
+      Object.keys(pathObj).forEach(method => leadingInfo.push(`[${method.toUpperCase()}]${baseURL}${path}`))
+    })
+    return leadingInfo
+  }
+  generateAPISpecAndDiffsBeforeUpload = (isNew) => {
+    const csAPISpec = JSON.parse(JSON.stringify(this.state.csAPISpecToUpload))
+    if(isNew) {
+      csAPISpec["id"] = ""
+      csAPISpec["name"] = ""
+    }
+    csAPISpec.spec = YAML.safeLoad(this.props.specSelectors.specStr())
+    csAPISpec.leadingInfo = this.getCurrentAPISpecLeadingInfo()
+    this.setState({"csAPISpecToUpload": csAPISpec})
+
+    if(!this.hasParserErrors() && !this.hasSchemaErrors()) {
+      const originLeadingInfo = this.state.csAPISpecToUpload["leadingInfo"]
+      const leadingInfo = this.getCurrentAPISpecLeadingInfo()
+
+      const news = leadingInfo.filter(apiInfo => !originLeadingInfo || !originLeadingInfo.includes(apiInfo))
+      const dels = originLeadingInfo ? originLeadingInfo.filter(apiInfo => !leadingInfo || !leadingInfo.includes(apiInfo)) : []
+      this.setState({"csAPISpecDiffs": {news, dels}})
+    } else {
+      this.setState({"csAPISpecDiffs": {news:[], dels:[]}})
+    }
+  }
+  getAPIInfoStyle = (apiInfo) => {
+    if(this.state.csAPISpecDiffs.news && this.state.csAPISpecDiffs.news.includes(apiInfo)) {
+      return {color: "green"}
+    }
+    if(this.state.csAPISpecDiffs.dels && this.state.csAPISpecDiffs.dels.includes(apiInfo)) {
+      return {color: "red", "text-decoration" : "line-through"}
+    }
+    return {}
+  }
+  getCSAPISpecList = async () => {
+    const apiSpecList = await this.props.getConfigs().csAPISpecActions.getAPISpecList()
+    this.setState({"csAPISpecList": apiSpecList})
+  }
+
+  getCSAPISpecById = async (id) => {
+    const apiSpec = await this.props.getConfigs().csAPISpecActions.getAPISpecById(id)
+    this.setState({"csAPISpecToUpload": apiSpec})
+    this.props.specActions.updateSpec(YAML.safeDump(YAML.safeLoad(JSON.stringify(apiSpec.spec))))
+    this.hideModal("csAPISpecListModal")
+  }
+
+  handleCSAPISpecInputChange = (event) => {
+    const target = event.target
+    const value = target.type === "checkbox" ? target.checked : target.value
+    const name = target.name
+
+    const csAPISpec = JSON.parse(JSON.stringify(this.state.csAPISpecToUpload))
+    csAPISpec[name] = value
+
+    this.setState({ "csAPISpecToUpload": csAPISpec })
+  }
+
+  setCSAPISepcInfoBeforeUpload = ({id, name, leadingInfo}) => {
+    let csAPISpec = JSON.parse(JSON.stringify(this.state.csAPISpecToUpload))
+    csAPISpec = { ...csAPISpec, id, name, leadingInfo}
+    this.setState({"csAPISpecToUpload": csAPISpec}, () => {
+      this.generateAPISpecAndDiffsBeforeUpload()
+    })
+    // this.generateAPISpecAndDiffsBeforeUpload()
+  }
+
+  uploadCSAPISpec = async () => {
+    if(this.hasParserErrors() || this.hasSchemaErrors()) {
+      return alert("Please correct the schema error before upload")
+    }
+    if(!this.state.csAPISpecToUpload.name) {
+      return alert("Please define the name of the API spec.")
+    }
+    try {
+      const csAPISpec = JSON.parse(JSON.stringify(this.state.csAPISpecToUpload))
+      csAPISpec.spec = YAML.safeLoad(this.props.specSelectors.specStr())
+
+      const uploadedAPISpec = await this.props.getConfigs().csAPISpecActions.uploadAPISpec(csAPISpec)
+      this.setState({"csAPISpecToUpload": uploadedAPISpec})
+      alert("Upload successfully!")
+      return this.hideModal("csAPISpecUploadModal")
+    } catch (err) {
+      return alert("Failed to upload the API Spec.", err)
+    }
+  }
+
+  uploadAPISpecToCS = async () => {
+    if(this.hasParserErrors()) {
+      return alert("Please correct the schema error before upload")
+    }
+    const csAPISepcURL = "http://localhost:3000/apiSpecs"
+    const id = 2
+    const token = "xxxx"
+    const res = await fetch(csAPISepcURL + "/" + id, {
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Token": token
+      }
+    })
+    if(res.ok) {
+      const apiSpec = await res.json()
+      const editorSpec = YAML.safeLoad(this.props.specSelectors.specStr())
+      apiSpec.spec = editorSpec
+      await fetch(csAPISepcURL + "/" + id, {
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Token": token
+        },
+        method: "PUT",
+        body: JSON.stringify({spec: editorSpec})
+      })
+    } else {
+      return alert("Error:\n" + res)
+    }
+  }
+
 
   importFromURL = () => {
     let url = prompt("Enter the URL to import from:")
@@ -258,6 +398,7 @@ export default class Topbar extends React.Component {
       window.localStorage.removeItem("swagger-editor-content")
       this.props.specActions.updateSpec("")
     }
+    this.setState("csAPISpecToUpload", {})
   }
 
   // Helpers
@@ -274,6 +415,9 @@ export default class Topbar extends React.Component {
   }
 
   // Logic helpers
+  hasSchemaErrors = () => {
+    return this.props.errSelectors.allErrors().filter(err => err.get("source") === "schema").size > 0
+  }
 
   hasParserErrors = () => {
     return this.props.errSelectors.allErrors().filter(err => err.get("source") === "parser").size > 0
@@ -371,6 +515,11 @@ export default class Topbar extends React.Component {
               <img height="30" width="30" className="topbar-logo__img" src={ Logo } alt=""/>
               <span className="topbar-logo__title">Swagger Editor</span>
             </Link>
+            <DropdownMenu {...makeMenuOptions("Publish")}>
+              <li><button type="button" onClick={() => this.openCSAPISpecListModal()}>Load...</button></li>
+              <li><button type="button" onClick={() => this.openCSAPISpecUploadModal("new")}>Upload as new...</button></li>
+              <li><button type="button" onClick={() => this.openCSAPISpecUploadModal()}>Upload as...</button></li>
+            </DropdownMenu>
             <DropdownMenu {...makeMenuOptions("File")}>
               <li><button type="button" onClick={this.importFromURL}>Import URL</button></li>
               <li><button type="button" onClick={() => this.showModal("fileLoadModal")}>Import File</button></li>
@@ -401,6 +550,61 @@ export default class Topbar extends React.Component {
             </DropdownMenu> : null }
           </div>
         </div>
+        {this.state.csAPISpecListModal && <Modal className="modal" onCloseClick={() => this.hideModal("csAPISpecListModal")} styleName="modal-dialog">
+          <div className="container modal-message">
+            <h2>API Spec List</h2>
+            <div>{this.state.csAPISpecList.map(csAPISpec => {
+              return (<ul>
+                <li>{csAPISpec.name} <button type="button" onClick={() => this.getCSAPISpecById(csAPISpec.id)}>select</button>
+                  <ul>{csAPISpec.leadingInfo.map(apiInfo => <li>{apiInfo}</li>)}</ul>
+                </li>
+              </ul>)
+            })}</div>
+          </div>
+          <div className="right">
+            <button className="btn cancel" onClick={() => this.hideModal("csAPISpecListModal")}>Cancel</button>
+          </div>
+        </Modal>
+        }
+        {this.state.csAPISpecUploadModal && <Modal className="modal" onCloseClick={() => this.hideModal("csAPISpecUploadModal")} styleName="modal-dialog">
+          <div className="container modal-message">
+            <h2>API Spec Upload</h2>
+            <form>
+              <label>Name:  
+                <input
+                  name="name"
+                  type="text"
+                  value={this.state.csAPISpecToUpload.name}
+                  onChange={this.handleCSAPISpecInputChange} />
+              </label>
+              {this.state.csAPISpecToUpload.leadingInfo && <ul>
+              {
+                this.state.csAPISpecToUpload.leadingInfo.map(apiInfo => <li style={this.getAPIInfoStyle(apiInfo)}>{apiInfo}</li>)
+              }
+              {
+                this.state.csAPISpecDiffs.dels && this.state.csAPISpecDiffs.dels.map(deletedApiInfo => {
+                  return <li style={this.getAPIInfoStyle(deletedApiInfo)} titile="deleted">{deletedApiInfo}</li>
+                })
+              }</ul>}
+            </form>
+            {this.state.csAPISpecUploadModalType !== "new" && (<div>
+              <hr/>
+              <h2>Select one of existing API to update</h2>
+              <div>{this.state.csAPISpecList.map(csAPISpec => {
+                return (<ul>
+                  <li>{csAPISpec.name} <button type="button" onClick={() => this.setCSAPISepcInfoBeforeUpload(csAPISpec)}>select</button>
+                    <ul>{csAPISpec.leadingInfo.map(apiInfo => <li>{apiInfo}</li>)}</ul>
+                  </li>
+                </ul>)
+              })}</div>
+            </div>)}
+          </div>
+          <div className="right">
+            <button className="btn cancel" onClick={() => this.hideModal("csAPISpecUploadModal")}>Cancel</button>
+            <button className="btn" onClick={this.uploadCSAPISpec}>Upload</button>
+          </div>
+        </Modal>
+        }
         {this.state.fileLoadModal && <Modal className="modal" onCloseClick={() => this.hideModal("fileLoadModal")} styleName="modal-dialog-sm">
           <div className="container modal-message">
             <h2>Upload file</h2>
