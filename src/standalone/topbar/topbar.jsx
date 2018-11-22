@@ -11,6 +11,8 @@ import beautifyJson from "json-beautify"
 import "react-dd-menu/dist/react-dd-menu.css"
 import Logo from "./logo_small.png"
 
+import CSAPIInfo from "./csapi/CSAPIInfo"
+
 class OAS3GeneratorMessage extends React.PureComponent {
   render() {
     const { isShown } = this.props
@@ -517,8 +519,8 @@ export default class Topbar extends React.Component {
             </Link>
             <DropdownMenu {...makeMenuOptions("Publish")}>
               <li><button type="button" onClick={() => this.openCSAPISpecListModal()}>Load...</button></li>
-              <li><button type="button" onClick={() => this.openCSAPISpecUploadModal("new")}>Upload as new...</button></li>
               <li><button type="button" onClick={() => this.openCSAPISpecUploadModal()}>Upload as...</button></li>
+              <li><button type="button" onClick={() => this.openCSAPISpecUploadModal("new")}>Upload as new...</button></li>
             </DropdownMenu>
             <DropdownMenu {...makeMenuOptions("File")}>
               <li><button type="button" onClick={this.importFromURL}>Import URL</button></li>
@@ -554,11 +556,7 @@ export default class Topbar extends React.Component {
           <div className="container modal-message">
             <h2>API Spec List</h2>
             <div>{this.state.csAPISpecList.map(csAPISpec => {
-              return (<ul>
-                <li>{csAPISpec.name} <button type="button" onClick={() => this.getCSAPISpecById(csAPISpec.id)}>select</button>
-                  <ul>{csAPISpec.leadingInfo.map(apiInfo => <li>{apiInfo}</li>)}</ul>
-                </li>
-              </ul>)
+              return <CSAPIInfo key={csAPISpec.id} onSelect={() => this.getCSAPISpecById(csAPISpec.id)} apiSpec={csAPISpec} />
             })}</div>
           </div>
           <div className="right">
@@ -591,11 +589,7 @@ export default class Topbar extends React.Component {
               <hr/>
               <h2>Select one of existing API to update</h2>
               <div>{this.state.csAPISpecList.map(csAPISpec => {
-                return (<ul>
-                  <li>{csAPISpec.name} <button type="button" onClick={() => this.setCSAPISepcInfoBeforeUpload(csAPISpec)}>select</button>
-                    <ul>{csAPISpec.leadingInfo.map(apiInfo => <li>{apiInfo}</li>)}</ul>
-                  </li>
-                </ul>)
+                return <CSAPIInfo key={csAPISpec.id} onSelect={this.setCSAPISepcInfoBeforeUpload} apiSpec={csAPISpec} />
               })}</div>
             </div>)}
           </div>
