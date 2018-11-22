@@ -65,7 +65,7 @@ const getAPISpecById = async (id) => {
 const uploadAPISpec = async (apiSpec) => {
   let res
   if(apiSpec.id) {
-    res = await fetch(csAPISepcURL + "/" + id, {
+    res = await fetch(csAPISepcURL + "/" + apiSpec.id, {
       headers: {
         "Accept": "application/json",
         "Content-Type": "application/json",

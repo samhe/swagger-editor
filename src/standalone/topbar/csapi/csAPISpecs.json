@@ -361,36 +361,12 @@
       "status": "active"
     },
     {
-      "id": 2,
-      "name": "Sample",
-      "leadingInfo": [
-        "[POST]/v2/pet",
-        "[PUT]/v2/pet",
-        "[GET]/v2/pet/findByStatus",
-        "[GET]/v2/pet/findByTags",
-        "[GET]/v2/pet/{petId}",
-        "[POST]/v2/pet/{petId}",
-        "[DELETE]/v2/pet/{petId}",
-        "[POST]/v2/pet/{petId}/uploadImage",
-        "[GET]/v2/store/inventory",
-        "[POST]/v2/store/order",
-        "[GET]/v2/store/order/{orderId}",
-        "[DELETE]/v2/store/order/{orderId}",
-        "[POST]/v2/user",
-        "[POST]/v2/user/createWithArray",
-        "[POST]/v2/user/createWithList",
-        "[GET]/v2/user/login",
-        "[GET]/v2/user/logout",
-        "[GET]/v2/user/{username}",
-        "[PUT]/v2/user/{username}",
-        "[DELETE]/v2/user/{username}"
-      ],
       "spec": {
         "swagger": "2.0",
         "info": {
           "description": "This is a sample server Petstore server.  You can find out more about     Swagger at [http://swagger.io](http://swagger.io) or on [irc.freenode.net, #swagger](http://swagger.io/irc/).      For this sample, you can use the api key `special-key` to test the authorization     filters.",
           "version": "1.0.0",
-          "title": "Swagger Petstore",
+          "title": "Swagger Petstore testing",
           "termsOfService": "http://swagger.io/terms/",
           "contact": {
             "email": "apiteam@swagger.io"
@@ -430,46 +406,6 @@
         ],
         "paths": {
           "/pet": {
-            "post": {
-              "tags": [
-                "pet"
-              ],
-              "summary": "Add a new pet to the store",
-              "description": "",
-              "operationId": "addPet",
-              "consumes": [
-                "application/json",
-                "application/xml"
-              ],
-              "produces": [
-                "application/xml",
-                "application/json"
-              ],
-              "parameters": [
-                {
-                  "in": "body",
-                  "name": "body",
-                  "description": "Pet object that needs to be added to the store",
-                  "required": true,
-                  "schema": {
-                    "$ref": "#/definitions/Pet"
-                  }
-                }
-              ],
-              "responses": {
-                "405": {
-                  "description": "Invalid input"
-                }
-              },
-              "security": [
-                {
-                  "petstore_auth": [
-                    "write:pets",
-                    "read:pets"
-                  ]
-                }
-              ]
-            },
             "put": {
               "tags": [
                 "pet"
@@ -499,12 +435,6 @@
               "responses": {
                 "400": {
                   "description": "Invalid ID supplied"
-                },
-                "404": {
-                  "description": "Pet not found"
-                },
-                "405": {
-                  "description": "Validation exception"
                 }
               },
               "security": [
@@ -517,14 +447,14 @@
               ]
             }
           },
-          "/pet/findByStatus": {
+          "/pet/findById": {
             "get": {
               "tags": [
                 "pet"
               ],
-              "summary": "Finds Pets by status",
+              "summary": "Finds Pets by Id",
               "description": "Multiple status values can be provided with comma separated strings",
-              "operationId": "findPetsByStatus",
+              "operationId": "findPetsById",
               "produces": [
                 "application/xml",
                 "application/json"
@@ -1420,7 +1350,30 @@
           "description": "Find out more about Swagger",
           "url": "http://swagger.io"
         }
-      }
+      },
+      "leadingInfo": [
+        "[PUT]/v2/pet",
+        "[GET]/v2/pet/findById",
+        "[GET]/v2/pet/findByTags",
+        "[GET]/v2/pet/{petId}",
+        "[POST]/v2/pet/{petId}",
+        "[DELETE]/v2/pet/{petId}",
+        "[POST]/v2/pet/{petId}/uploadImage",
+        "[GET]/v2/store/inventory",
+        "[POST]/v2/store/order",
+        "[GET]/v2/store/order/{orderId}",
+        "[DELETE]/v2/store/order/{orderId}",
+        "[POST]/v2/user",
+        "[POST]/v2/user/createWithArray",
+        "[POST]/v2/user/createWithList",
+        "[GET]/v2/user/login",
+        "[GET]/v2/user/logout",
+        "[GET]/v2/user/{username}",
+        "[PUT]/v2/user/{username}",
+        "[DELETE]/v2/user/{username}"
+      ],
+      "id": 2,
+      "name": "Sample2"
     },
     {
       "spec": {
