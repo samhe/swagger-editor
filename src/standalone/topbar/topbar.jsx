@@ -105,8 +105,9 @@ export default class Topbar extends React.Component {
     this.showModal("csAPISpecListModal")
   }
   openCSAPISpecUploadModal = async (type) => {
-    this.generateAPISpecAndDiffsBeforeUpload()
-    this.setState({csAPISpecUploadModalType: (type === "new" ? "new" : "edit")})
+    const isNew = type === "new"
+    this.generateAPISpecAndDiffsBeforeUpload(isNew)
+    this.setState({csAPISpecUploadModalType: (isNew ? "new" : "edit")})
     await this.getCSAPISpecList()
     this.showModal("csAPISpecUploadModal")
   }
@@ -124,26 +125,24 @@ export default class Topbar extends React.Component {
     })
     return leadingInfo
   }
-  generateAPISpecAndDiffsBeforeUpload = (isNew) => {
-    const csAPISpec = JSON.parse(JSON.stringify(this.state.csAPISpecToUpload))
-    if(isNew) {
-      csAPISpec["id"] = ""
-      csAPISpec["name"] = ""
-    }
-    csAPISpec.spec = YAML.safeLoad(this.props.specSelectors.specStr())
-    csAPISpec.leadingInfo = this.getCurrentAPISpecLeadingInfo()
-    this.setState({"csAPISpecToUpload": csAPISpec})
-
-    if(!this.hasParserErrors() && !this.hasSchemaErrors()) {
-      const originLeadingInfo = this.state.csAPISpecToUpload["leadingInfo"]
-      const leadingInfo = this.getCurrentAPISpecLeadingInfo()
-
+  generateAPISpecAndDiffsBeforeUpload = (isForNew) => {
+    const originLeadingInfo = this.state.csAPISpecToUpload["leadingInfo"]
+    const leadingInfo = this.getCurrentAPISpecLeadingInfo()
+    if(!this.hasParserErrors() && !this.hasSchemaErrors() && Array.isArray(originLeadingInfo) && Array.isArray(leadingInfo)) {
       const news = leadingInfo.filter(apiInfo => !originLeadingInfo || !originLeadingInfo.includes(apiInfo))
-      const dels = originLeadingInfo ? originLeadingInfo.filter(apiInfo => !leadingInfo || !leadingInfo.includes(apiInfo)) : []
+      const dels = originLeadingInfo.filter(apiInfo => !leadingInfo || !leadingInfo.includes(apiInfo))
       this.setState({"csAPISpecDiffs": {news, dels}})
     } else {
       this.setState({"csAPISpecDiffs": {news:[], dels:[]}})
     }
+    let csAPISpec = {}
+    if(!isForNew) {
+      csAPISpec = JSON.parse(JSON.stringify(this.state.csAPISpecToUpload))
+    }
+    csAPISpec.spec = YAML.safeLoad(this.props.specSelectors.specStr())
+    csAPISpec.leadingInfo = leadingInfo
+    this.setState({"csAPISpecToUpload": csAPISpec})
+
   }
   getAPIInfoStyle = (apiInfo) => {
     if(this.state.csAPISpecDiffs.news && this.state.csAPISpecDiffs.news.includes(apiInfo)) {
@@ -205,39 +204,6 @@ export default class Topbar extends React.Component {
       return alert("Failed to upload the API Spec.", err)
     }
   }
-
-  uploadAPISpecToCS = async () => {
-    if(this.hasParserErrors()) {
-      return alert("Please correct the schema error before upload")
-    }
-    const csAPISepcURL = "http://localhost:3000/apiSpecs"
-    const id = 2
-    const token = "xxxx"
-    const res = await fetch(csAPISepcURL + "/" + id, {
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Token": token
-      }
-    })
-    if(res.ok) {
-      const apiSpec = await res.json()
-      const editorSpec = YAML.safeLoad(this.props.specSelectors.specStr())
-      apiSpec.spec = editorSpec
-      await fetch(csAPISepcURL + "/" + id, {
-        headers: {
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-          "Token": token
-        },
-        method: "PUT",
-        body: JSON.stringify({spec: editorSpec})
-      })
-    } else {
-      return alert("Error:\n" + res)
-    }
-  }
-
 
   importFromURL = () => {
     let url = prompt("Enter the URL to import from:")

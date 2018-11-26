@@ -20,7 +20,7 @@ class CSAPIInfo extends Component {
     return (
     <ul>
       <li><button type="button" onClick={() => this.setState({collapsed: !this.state.collapsed})}>{this.state.collapsed ? "+" : "-"}</button> {this.apiSpec.name} <button type="button" onClick={() => this.props.onSelect(this.apiSpec)}>Select</button>
-        <ul style={ this.getLeadingInfoStyle()} >{this.apiSpec.leadingInfo.map(apiInfo => <li>{apiInfo}</li>)}</ul>
+        <ul style={ this.getLeadingInfoStyle()} >{this.apiSpec.leadingInfo && this.apiSpec.leadingInfo.map(apiInfo => <li>{apiInfo}</li>)}</ul>
       </li>
     </ul>
     )
