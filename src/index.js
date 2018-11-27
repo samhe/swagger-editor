@@ -101,6 +101,7 @@ const defaults = {
   swagger2GeneratorUrl: "https://generator.swagger.io/api/swagger.json",
   oas3GeneratorUrl: "https://generator3.swagger.io/api/swagger.json",
   csAPISpecActions: {
+    apiSpecId: "",
     getAPISpecList,
     getAPISpecById,
     uploadAPISpec

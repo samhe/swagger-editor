@@ -91,6 +91,13 @@ export default class Topbar extends React.Component {
     })
   }
 
+  preloadAPISpec = async () => {
+    const initAPISpecId = this.props.getConfigs().csAPISpecActions.apiSpecId
+    if(initAPISpecId) {
+      await this.getCSAPISpecById(initAPISpecId)
+    }
+  }
+
   downloadFile = (content, fileName) => {
     if(window.Cypress) {
       // HACK: temporary workaround for https://github.com/cypress-io/cypress/issues/949
@@ -423,6 +430,7 @@ export default class Topbar extends React.Component {
 
   componentDidMount() {
     this.instantiateGeneratorClient()
+    this.preloadAPISpec()
   }
 
   componentDidUpdate() {
