@@ -62,6 +62,9 @@ const getAPISpecById = async (id) => {
   })
   return await res.json()
 }
+const postLoadAPISpec = async () => {
+  console.log("postLoadAPISpec", "preset the security info", window.editor && window.editor.specSelectors.securityDefinitions() && window.editor.specSelectors.securityDefinitions().get("csAppKey"))
+}
 const uploadAPISpec = async (apiSpec) => {
   let res
   if(apiSpec.id) {
@@ -104,7 +107,8 @@ const defaults = {
     apiSpecId: "",
     getAPISpecList,
     getAPISpecById,
-    uploadAPISpec
+    uploadAPISpec,
+    postLoadAPISpec
   }
 }
 

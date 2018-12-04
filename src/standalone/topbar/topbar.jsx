@@ -92,9 +92,19 @@ export default class Topbar extends React.Component {
   }
 
   preloadAPISpec = async () => {
-    const initAPISpecId = this.props.getConfigs().csAPISpecActions.apiSpecId
+    const csAPISpecActions = this.props.getConfigs().csAPISpecActions
+    const initAPISpecId = csAPISpecActions.apiSpecId
     if(initAPISpecId) {
       await this.getCSAPISpecById(initAPISpecId)
+    } else {
+      await this.postLoadAPISpec
+    }
+  }
+
+  postLoadAPISpec = async () => {
+    const csAPISpecActions = this.props.getConfigs().csAPISpecActions
+    if(csAPISpecActions.postLoadAPISpec) {
+      await csAPISpecActions.postLoadAPISpec()
     }
   }
 
@@ -166,10 +176,13 @@ export default class Topbar extends React.Component {
   }
 
   getCSAPISpecById = async (id) => {
-    const apiSpec = await this.props.getConfigs().csAPISpecActions.getAPISpecById(id)
+    const csAPISpecActions = this.props.getConfigs().csAPISpecActions
+    const apiSpec = await csAPISpecActions.getAPISpecById(id)
     this.setState({"csAPISpecToUpload": apiSpec})
     this.props.specActions.updateSpec(YAML.safeDump(YAML.safeLoad(JSON.stringify(apiSpec.spec))))
     this.hideModal("csAPISpecListModal")
+    //post load API Sepc
+    await this.postLoadAPISpec()
   }
 
   handleCSAPISpecInputChange = (event) => {
